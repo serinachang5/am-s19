@@ -84,7 +84,7 @@ def baseline(level):
 
     model = Model(input, out)
     model.compile(optimizer="rmsprop", loss="categorical_crossentropy", metrics=["accuracy"])
-    model.fit(X_tr, np.array(y_tr), batch_size=32, epochs=10, validation_split=0.1, verbose=1)
+    model.fit(X_tr, np.array(y_tr), batch_size=32, epochs=30, validation_split=0.1, verbose=1)
     scores = model.evaluate(X_te, y_te)
     print("%s: %.2f%%" % (model.metrics_names[1], scores[1]*100))
     compute_f1(y_te, model.predict(X_te))
@@ -106,3 +106,4 @@ def compute_f1(gold, pred):
 
 if __name__ == '__main__':
     baseline('paragraph')
+    baseline('essay')
