@@ -105,4 +105,4 @@ def compute_f1(gold, pred):
     print('Macro F1:', round(np.mean(f1s), 3))
 
 if __name__ == '__main__':
-    baseline('essay')
+    baseline('paragraph')

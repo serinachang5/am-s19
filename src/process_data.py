@@ -49,9 +49,13 @@ def create_processed_files(level):
                 txt_fn, ann_fn = sorted(fns, reverse=True)
                 try:
                     all_words, all_tags = convert_to_words_and_tags(txt_fn, ann_fn, level)
-                    for words_at_level, tags_at_level in zip(all_words, all_tags):
-                        words_f.write(' '.join(words_at_level) + '\n')
-                        tags_f.write(' '.join(tags_at_level) + '\n')
+                    if level == 'paragraph':
+                        for words_per_paragraph, tags_per_paragraph in zip(all_words, all_tags):
+                            words_f.write(' '.join(words_per_paragraph) + '\n')
+                            tags_f.write(' '.join(tags_per_paragraph) + '\n')
+                    else:
+                        words_f.write(' '.join(all_words) + '\n')
+                        tags_f.write(' '.join(all_tags) + '\n')
                 except AssertionError:
                     print('Failed:', essay_id)
 
@@ -175,4 +179,4 @@ def get_train_test_split():
     return train_ids, test_ids
 
 if __name__ == '__main__':
-    create_processed_files('essay')
+    create_processed_files('paragraph')
