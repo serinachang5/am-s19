@@ -57,50 +57,60 @@ def convert_to_words_and_tags(txt_fn, level):
     into paragraphs.
     """
     lines = open(txt_fn, 'r').readlines()
-    labeled_texts = []
+    labeled_texts = [('par-sep', '')]  # end with par-sep
     for i in range(1, len(lines)):  # traverse backwards, ignore first line b/c title
         line = lines[i*-1]
         elements = line.strip().split('\t')
-        if len(elements) >= 3:
-            label, text = elements[1], elements[2]
-            if label in ARGUMENT_LABELS:
-                labeled_texts.insert(0, ('I', text))
-            elif label in NONARGUMENT_LABELS:
-                labeled_texts.insert(0, ('O', text))
-            elif label == 'par-sep':
-                labeled_texts.insert(0, ('SEP', ''))
-            elif label == 'continued':
+        assert(len(elements) >= 2)
+        label = elements[1]
+        if label == 'par-sep':
+            labeled_texts.insert(0, (label, ''))
+        else:
+            assert(len(elements) >= 3)
+            text = elements[2]
+            if label == 'continued':
                 assert(len(labeled_texts) > 0)
                 subsequent_label = labeled_texts[0][0]
+                if not subsequent_label.startswith('cont-'):
+                    subsequent_label = 'cont-' + subsequent_label
                 labeled_texts.insert(0, (subsequent_label, text))
             else:
-                print('Non-covered label:', label)
-        elif len(elements) == 2 and elements[1] == 'par-sep':
-            labeled_texts.insert(0, ('SEP', ''))
-        else:
-            print(elements)
+                labeled_texts.insert(0, (label, text))
+
     all_words, all_tags = [], []
     paragraph_words, paragraph_tags = [], []
     for i, (label, text) in enumerate(labeled_texts):
-        if label == 'SEP' and len(paragraph_words) > 0:
-            if level == 'paragraph':
-                all_words.append(paragraph_words)
-                all_tags.append(paragraph_tags)
-            else:
-                all_words += paragraph_words
-                all_tags += paragraph_tags
-            paragraph_words, paragraph_tags = [], []
+        if label == 'par-sep':
+            if len(paragraph_words) > 0:
+                if level == 'paragraph':
+                    all_words.append(paragraph_words)
+                    all_tags.append(paragraph_tags)
+                else:
+                    all_words += paragraph_words
+                    all_tags += paragraph_tags
+                paragraph_words, paragraph_tags = [], []
         else:
             words = re.findall(r"[\w']+|[.,!?;:\"-_]", text)  # separate punctuation from words
-            if len(words) > 0:
-                tags = [label] * len(words)
-                if label == 'I' and i > 0 and labeled_texts[i-1][0] != 'I':
-                    tags[0] = 'B'  # beginning of inside
+            if label.startswith('cont-'):
+                label = label[5:]
+            if label in ARGUMENT_LABELS:
+                tags = ['I'] * len(words)
+                if i == 0 or not labeled_texts[i-1][0].startswith('cont-'):
+                    tags[0] = 'B'
+                paragraph_words += words
+                paragraph_tags += tags
+            elif label in NONARGUMENT_LABELS:
+                tags = ['O'] * len(words)
                 paragraph_words += words
                 paragraph_tags += tags
             else:
-                print(txt_fn, i, text)
+                print('missing:', label)
     return all_words, all_tags
 
 if __name__ == '__main__':
-    create_processed_files('paragraph')
+    create_processed_files('essay')
+    # all_words, all_tags = convert_to_words_and_tags('../1.webis_editorials/test-data.txt', 'paragraph')
+    # for paragraph_words, paragraph_tags in zip(all_words, all_tags):
+    #     print('NEW PARAGRAPH')
+    #     for w, t in zip(paragraph_words, paragraph_tags):
+    #         print(w,t)
